@@ -7,7 +7,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import cv2
 import numpy as np
 
-from face import face_model
+from face.base import face_model
 
 model = None
 data_que = None
@@ -52,6 +52,7 @@ def init_data_base():
         with open(file_path, 'rb') as f:
             data = f.read()
         vec, bbox = do_recognize(data)
+        print(vec.T)
         data_base[key]['vec'] = vec
 
 
@@ -119,7 +120,7 @@ def recognize_syn(data, rotate=False):
 def init_model():
     parser = argparse.ArgumentParser(description='face model test')
     parser.add_argument('--image-size', default='112,112', help='')
-    parser.add_argument('--model', default='/home/fish/work/insightface/models/model-r100-ii/model,0',
+    parser.add_argument('--model', default='/home/fish/PycharmProjects/Web&FaceRecognize/model/model-r100-ii/model,0',
                         help='path to load model.')
     parser.add_argument('--det-model-path', default='/home/fish/PycharmProjects/Web&FaceRecognize/model/mtcnn-model',
                         help='path to load model.')
@@ -180,7 +181,7 @@ def start_net():
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # bind the socket to a public host, and a well-known port
     print(socket.gethostname())
-    serversocket.bind(("192.168.1.136", 11234))
+    serversocket.bind(("192.168.199.136", 11234))
     # become a server socket
     serversocket.listen(5)
 

@@ -1,4 +1,4 @@
-from face import face_model
+from face import base
 import argparse
 import cv2
 import numpy as np
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--flip', default=0, type=int, help='whether do lr flip aug')
     parser.add_argument('--threshold', default=1.24, type=float, help='ver dist threshold')
     args = parser.parse_args()
-    model = face_model.FaceModel(args)
+    model = base.FaceModel(args)
 
     rimg = cv2.imread('../upload_image/Trump.jpeg')
     f1 = do_recognize(rimg)

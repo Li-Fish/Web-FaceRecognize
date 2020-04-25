@@ -1,15 +1,14 @@
-import socket
+import numpy as np
+import io
 
-serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# bind the socket to a public host, and a well-known port
+a = np.arange(5)
+out = io.BytesIO()
+np.save(out, a)
+out.seek(0)
+data = out.read()
+print(len(data))
 
-serversocket.bind(("192.168.1.136", 11234))
-# become a server socket
-serversocket.listen(5)
-
-serversocket.settimeout(5)
-
-try:
-    serversocket.accept()
-except socket.timeout as e:
-    print(2333)
+out = io.BytesIO(data)
+out.seek(0)
+t = np.load(out)
+print(t)

@@ -10,7 +10,7 @@ try:
 except ImportError:
     izip = zip
 
-from face.helper import nms, adjust_input, detect_first_stage_warpper
+from face.base.helper import nms, adjust_input, detect_first_stage_warpper
 
 class MtcnnDetector(object):
     """

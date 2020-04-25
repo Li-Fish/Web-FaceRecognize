@@ -49,8 +49,7 @@ class ClientSocket():
         data = []
 
         lenData = self.socket.recv(4)
-        len_data = int(lenData[0]) * (2 ** 24) + int(lenData[1]) * (2 ** 16) + \
-                   int(lenData[2]) * (2 ** 8) + int(lenData[3]) * (2 ** 0)
+        len_data = int.from_bytes(lenData, byteorder='big', signed=False)
 
         log.info("receive data len {}".format(len_data))
 

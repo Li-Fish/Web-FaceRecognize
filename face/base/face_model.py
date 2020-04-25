@@ -2,15 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-#import tensorflow as tf
 import numpy as np
 import mxnet as mx
 import cv2
 from sklearn import preprocessing
-from face.mtcnn_detector import MtcnnDetector
-#sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src', 'util'))
-from face import face_preprocess
+from face.base.mtcnn_detector import MtcnnDetector
+from face.base import face_preprocess
 
 
 def do_flip(data):
