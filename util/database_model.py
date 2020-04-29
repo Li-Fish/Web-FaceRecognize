@@ -14,6 +14,7 @@ class ManageUser(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String(20), nullable=False, unique=True)
     password = Column(String(20), nullable=False)
+    type = Column(Integer, nullable=False)
 
     def __repr__(self):
         return "<ManageUser(id='%s', username='%s', password='%s')>" \
@@ -24,7 +25,7 @@ class AttendanceUser(Base):
     __tablename__ = 'attendance_user'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False, unique=True)
     photo_id = Column(Integer, ForeignKey("photo.id"), nullable=False)
     feature_id = Column(Integer, ForeignKey("feature.id"), nullable=False)
     attendance_id = Column(Integer, ForeignKey("attendance.id"), nullable=False)
@@ -102,7 +103,7 @@ class Attendance(Base):
 
     id = Column(Integer, primary_key=True)
     creator_id = Column(Integer, ForeignKey('manage_users.id'))
-    title = Column(String(200), nullable=False)
+    title = Column(String(200), nullable=False, unique=True)
     type = Column(Integer, nullable=False)
     info = Column(String(500))
 
@@ -111,24 +112,6 @@ class Attendance(Base):
     def __repr__(self):
         return "<AttendanceRecord(id='%s', creator_id='%s', title='%s')>" \
                % (self.id, self.creator_id, self.title)
-
-
-def init_db():
-    username = 'root'
-    password = '109412'
-    host = '127.0.0.1'
-    port = 3306
-    db = 'face'
-
-    connect_str = 'mysql+mysqldb://{}:{}@{}:{}/{}' \
-        .format(username, password, host, port, db)
-
-    engine = create_engine(connect_str, echo=False)
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine)
-    Session = sessionmaker()
-    Session.configure(bind=engine)
-    return Session()
 
 
 def fake_data(session):
@@ -170,5 +153,6 @@ def fake_data(session):
 
 
 if __name__ == '__main__':
-    session = init_db()
-    fake_data(session)
+    # session = init_db()
+    # fake_data(session)
+    pass

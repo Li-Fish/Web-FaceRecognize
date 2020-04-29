@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
+from util.common_tools import rotate_img
 
 import cv2
 import numpy as np
@@ -24,25 +25,6 @@ data_base = {
         'src': '/home/fish/work/insightface/deploy/upload_image/Obama.jpg',
     }
 }
-
-
-def rotate_img(img):
-    # 获取输入图像的信息，生成旋转操作所需的参数（padding: 指定零填充的宽度； canter: 指定旋转的轴心坐标）
-    h, w = img.shape[:2]
-    padding = (w - h) // 2
-    center = (w // 2, w // 2)
-
-    # 在原图像两边做对称的零填充，使得图片由矩形变为方形
-    img_padded = np.zeros(shape=(w, w, 3), dtype=np.uint8)
-    img_padded[padding:padding + h, :, :] = img
-
-    # 逆时针-90°(即顺时针90°)旋转填充后的方形图片
-    M = cv2.getRotationMatrix2D(center, 90, 1)
-    rotated_padded = cv2.warpAffine(img_padded, M, (w, w))
-
-    # 从旋转后的图片中截取出我们需要的部分，作为最终的输出图像
-    output = rotated_padded[:, padding:padding + h, :]
-    return output
 
 
 def init_data_base():

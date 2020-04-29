@@ -6,39 +6,29 @@ from queue import Queue
 
 class ServerSocket():
     def __init__(self, ip, port):
-        self.is_listen = False
         self.listen_thread = None
         self.ip = ip
         self.port = port
-        self.open_socket_list = Queue(1024)
+        self.listener = None
+        self.server_socket = None
 
     def listen(self):
-        serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        serversocket.bind((self.ip, self.port))
-        serversocket.listen(5)
+        self.server_socket.bind((self.ip, self.port))
+        self.server_socket.listen(5)
 
         log.info("start listen on {}:{}".format(self.ip, self.port))
+        self.listener = self.do_accept()
 
-        self.is_listen = True
+    def do_accept(self):
+        while True:
+            (clientsocket, address) = self.server_socket.accept()
+            log.info("accept client socket {}".format(address))
+            yield ClientSocket(clientsocket)
 
-        while self.is_listen:
-            serversocket.settimeout(5)
-            try:
-                (clientsocket, address) = serversocket.accept()
-                log.info("accept client socket {}, queue size is {}".format(address, self.open_socket_list.qsize()))
-                self.open_socket_list.put(ClientSocket(clientsocket))
-            except socket.timeout:
-                pass
-
-    def start_listen(self):
-        self.listen_thread = threading.Thread(target=self.listen, args=())
-        self.listen_thread.start()
-
-    def close_listen(self):
-        self.is_listen = False
-        if self.listen_thread is not None:
-            self.listen_thread.join()
+    def accept(self):
+        return next(self.listener)
 
 
 class ClientSocket():
@@ -79,9 +69,8 @@ class ClientSocket():
 
 
 if __name__ == '__main__':
-    test = ServerSocket("192.168.1.136", 11234)
-    test.start_listen()
+    test = ServerSocket("192.168.123.136", 11234)
+    test.listen()
     while True:
-        s = test.open_socket_list.get()
-        data = s.recv()
-        print(data)
+        t = test.accept()
+        print(t.recv())
