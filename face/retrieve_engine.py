@@ -23,5 +23,5 @@ class RetrieveEngine:
 
     @staticmethod
     def get_simple_instance():
-        database = DatabaseEngine.get_simple_instance()
+        database = DatabaseEngine()
         return RetrieveEngine(database)
