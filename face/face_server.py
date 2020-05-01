@@ -1,6 +1,9 @@
 import argparse
 import threading
 from concurrent.futures.thread import ThreadPoolExecutor
+
+from util.common_tools import executor_callback
+from util.database_engine import DatabaseEngine
 from util.fish_logger import log
 from face.face_engine import FaceEngine
 from face.retrieve_engine import RetrieveEngine
@@ -20,23 +23,19 @@ class FaceServer:
 
         while True:
             socket = self.net_server.accept()
-
-            task_type = socket.recv().decode()
-            if task_type == 'retrieve':
-                self.pool.submit(self.process_retrieve, socket)
-            else:
-                log.error('except type {}'.format(task_type))
+            self.pool.submit(self.process_retrieve, socket).add_done_callback(executor_callback)
 
     def process_retrieve(self, socket):
         group_id = int.from_bytes(socket.recv(), byteorder='big', signed=False)
+        log.info("group id is {}".format(group_id))
         img_data = socket.recv()
 
         rst = self.face_engine.recognize(img_data, True)
         if rst is not None:
             feature, bbox = rst
             user = self.retrieve_engine.research_in_group(group_id, feature)
-            ans = '{} {}'.format(user.id, user.name)
-            socket.send(ans)
+            ans = '{}\n{}'.format(user["id"], user["name"])
+            socket.raw_send(ans)
 
         socket.close()
 
@@ -49,3 +48,9 @@ class FaceServer:
     def stop(self):
         # TODO
         raise Exception("not implement")
+
+
+if __name__ == '__main__':
+    db_engine = DatabaseEngine()
+    face_server = FaceServer("192.168.123.136", 11234, db_engine)
+    face_server.run()

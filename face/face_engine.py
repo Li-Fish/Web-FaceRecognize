@@ -1,7 +1,7 @@
 import argparse
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from util.common_tools import rotate_img
+from util.common_tools import rotate_img, executor_callback
 import numpy as np
 import cv2
 from face.base import face_model
@@ -50,6 +50,7 @@ class FaceEngine:
 
     def recognize_asyn(self, data, rotate=False):
         rst = self.pool.submit(self.do_recognize, data, rotate)
+        rst.add_done_callback(executor_callback)
         return rst
 
     def recognize(self, data, rotate=False):

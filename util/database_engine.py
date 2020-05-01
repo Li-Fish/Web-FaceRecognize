@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from face.face_engine import FaceEngine
 from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature
 from util.common_tools import bin_to_array, array_to_bin
+from util.fish_logger import log
 
 
 class DatabaseEngine:
@@ -31,7 +32,7 @@ class DatabaseEngine:
             rst.append({
                 'id': user.id,
                 'name': user.name,
-                'feature': bin_to_array(user.feature)
+                'feature': bin_to_array(user.feature.data)
             })
         return rst
 
@@ -129,5 +130,9 @@ def fake_data(db_engine):
         db_engine.insert_attendance_user(name, os.path.join(img_path, x), feature, attendance_id)
 
 
+def test(db_engine):
+    print(db_engine.get_retrieve_user(1))
+
+
 if __name__ == '__main__':
-    fake_data(DatabaseEngine())
+    test(DatabaseEngine())

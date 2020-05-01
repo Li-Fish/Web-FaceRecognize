@@ -45,7 +45,7 @@ class ClientSocket():
 
         lenSum = 0
         while True:
-            chunk = self.socket.recv(2048)
+            chunk = self.socket.recv(min(len_data - lenSum, 2048))
             if len(chunk) == 0:
                 break
             data.append(chunk)
@@ -62,7 +62,7 @@ class ClientSocket():
         return self.socket.recv(buf_size)
 
     def raw_send(self, data):
-        self.socket.send(data)
+        self.socket.send(bytes(data, encoding="utf8"))
 
     def close(self):
         self.socket.close()

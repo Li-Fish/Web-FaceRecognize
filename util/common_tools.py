@@ -2,6 +2,14 @@ import numpy as np
 import io
 import cv2
 
+from util.fish_logger import log
+
+
+def executor_callback(worker):
+    worker_exception = worker.exception()
+    if worker_exception:
+        log.exception("Worker return exception: {}".format(worker_exception))
+
 
 def rotate_img(img, angle=90):
     # 获取输入图像的信息，生成旋转操作所需的参数（padding: 指定零填充的宽度； canter: 指定旋转的轴心坐标）
