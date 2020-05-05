@@ -17,7 +17,7 @@ class DatabaseEngine:
         connect_str = 'mysql+mysqldb://{}:{}@{}:{}/{}' \
             .format(args['username'], args['password'], args['host'], args['port'], args['db'])
 
-        self.engine = create_engine(connect_str, echo=False)
+        self.engine = create_engine(connect_str, echo=False, pool_size=100)
         self.Session = sessionmaker()
         self.Session.configure(bind=self.engine)
 
@@ -47,12 +47,49 @@ class DatabaseEngine:
             }
         return None
 
+    def get_attendance_num(self):
+        session = self.Session()
+        return session.query(Attendance).count()
+
+    def update_attendance(self, _id, title, info, type):
+        session = self.Session()
+        obj = session.query(Attendance).filter_by(id=_id).one()
+        obj.title = title
+        obj.info = info
+        obj.type = type
+        session.commit()
+        return True
+
+    def delete_attendance(self, _id):
+        session = self.Session()
+        obj = session.query(Attendance).filter_by(id=_id).one()
+        session.delete(obj)
+        session.commit()
+        return True
+
+    def get_attendance_by_index(self, title_prefix, creator, offset, limit):
+        session = self.Session()
+        res = []
+        for item in session.query(Attendance).join(ManageUser).\
+                filter(Attendance.title.like("{}%".format(title_prefix))).\
+                filter(ManageUser.username.like("{}%".format(creator))).\
+                offset(offset).\
+                limit(limit):
+            res.append({
+                "id": item.id,
+                "creator": item.creator_user.username,
+                "title": item.title,
+                "type": item.type,
+                "info": item.info
+            })
+        return res
+
     def get_attendance_by_title(self, title):
         session = self.Session()
         for item in session.query(Attendance).filter_by(title=title):
             return {
                 "id": item.id,
-                "creator_id": item.creator_id,
+                "creator": item.creator_user.username,
                 "title": item.title,
                 "type": item.type,
                 "info": item.info
@@ -119,6 +156,8 @@ def fake_data(db_engine):
     db_engine.insert_manager_user("fish", "123456")
     create_id = db_engine.get_user_by_name("fish")["id"]
     db_engine.insert_attendance("test1", create_id, "test")
+    for x in range(2, 100):
+        db_engine.insert_attendance("test" + str(x), create_id, "test")
     attendance_id = db_engine.get_attendance_by_title("test1")["id"]
 
     img_path = "/home/fish/PycharmProjects/Web&FaceRecognize/upload_image"
@@ -135,4 +174,4 @@ def test(db_engine):
 
 
 if __name__ == '__main__':
-    test(DatabaseEngine())
+    fake_data(DatabaseEngine())

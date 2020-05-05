@@ -18,7 +18,6 @@ CORS(app, supports_credentials=True)
 
 @app.after_request
 def after_request(resp):
-    print(resp)
     resp = make_response(resp)
     resp.headers['Access-Control-Allow-Origin'] = '*'
     resp.headers['Access-Control-Allow-Methods'] = 'GET,POST'
@@ -29,7 +28,6 @@ def after_request(resp):
 @auth.verify_password
 def verify_password(fir, sec):
     username_token = request.headers.get('Token')
-    print(username_token)
     if username_token is None or username_token == '':
         return False
     else:
@@ -45,64 +43,53 @@ def index():
 @app.route('/api/login', methods=['post'])
 def login():
     json = request.get_json()
-    log.info("receive json {}", json)
+    log.info("receive json {}".format(json))
     user = db.get_user_by_name(json['username'])
 
     if user is None or 'password' not in json:
         return ''
 
     if user['password'] == json['password']:
-        token = generate_auth_token(user['username'], 10, secret_key)
+        token = generate_auth_token(user['username'], 60 * 60 * 24, secret_key)
         return token
     return ""
 
 
-simple_data = '''
-{
-    "list": [{
-            "id": 1,
-            "name": "张三",
-            "money": 123,
-            "address": "广东省东莞市长安镇",
-            "state": "成功",
-            "date": "2019-11-1",
-            "thumb": "https://lin-xin.gitee.io/images/post/wms.png"
-        },
-        {
-            "id": 2,
-            "name": "李四",
-            "money": 456,
-            "address": "广东省广州市白云区",
-            "state": "成功",
-            "date": "2019-10-11",
-            "thumb": "https://lin-xin.gitee.io/images/post/node3.png"
-        },
-        {
-            "id": 3,
-            "name": "王五",
-            "money": 789,
-            "address": "湖南省长沙市",
-            "state": "失败",
-            "date": "2019-11-11",
-            "thumb": "https://lin-xin.gitee.io/images/post/parcel.png"
-        },
-        {
-            "id": 4,
-            "name": "赵六",
-            "money": 1011,
-            "address": "福建省厦门市鼓浪屿",
-            "state": "成功",
-            "date": "2019-10-20",
-            "thumb": "https://lin-xin.gitee.io/images/post/notice.png"
-        }
-    ],
-    "pageTotal": 4
-}
-'''
-
-
-@app.route('/api/table', methods=['post'])
+@app.route('/api/attendance_table', methods=['post'])
 @auth.login_required
-def table():
-    print('2333')
-    return simple_data
+def attendance_table():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    res = {}
+
+    offset = (json['pageIndex'] - 1) * json['pageSize']
+    limit = json['pageSize']
+    title_prefix = json['title_prefix']
+
+    res["list"] = db.get_attendance_by_index(title_prefix, json['creator'], offset, limit)
+    res["total_num"] = db.get_attendance_num()
+
+    return res
+
+
+@app.route('/api/update_attendance', methods=['post'])
+@auth.login_required
+def update_attendance():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.update_attendance(json['id'], json['title'], json['info'], json['type'])
+
+    return 'OK'
+
+
+@app.route('/api/delete_attendance', methods=['post'])
+@auth.login_required
+def delete_attendance():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.delete_attendance(json['id'])
+
+    return 'OK'

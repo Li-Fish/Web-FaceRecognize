@@ -32,7 +32,7 @@ class AttendanceUser(Base):
 
     photo = relationship("Photo")
     feature = relationship("Feature")
-    attendance = relationship("Attendance", backref="user_list")
+    record_list = relationship("AttendanceRecord", backref="user", cascade="all, delete, delete-orphan")
 
     def __repr__(self):
         return "<AttendanceUser(id='%s', name='%s', attendance_id='%s')>" \
@@ -50,7 +50,6 @@ class AttendanceRecord(Base):
 
     photo = relationship("Photo")
     feature = relationship("Feature")
-    user = relationship("AttendanceUser", backref="record_list")
     attendance = relationship("Attendance", backref="record_list")
 
     def __repr__(self):
@@ -108,6 +107,8 @@ class Attendance(Base):
     info = Column(String(500))
 
     creator_user = relationship("ManageUser", backref="attendance_list")
+
+    user_list = relationship("AttendanceUser", backref="attendance", cascade="all, delete, delete-orphan")
 
     def __repr__(self):
         return "<AttendanceRecord(id='%s', creator_id='%s', title='%s')>" \
