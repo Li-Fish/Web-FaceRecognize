@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from face.face_engine import FaceEngine
-from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature
+from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature, AttendanceRecord
 from util.common_tools import bin_to_array, array_to_bin
 from util.fish_logger import log
 
@@ -70,10 +70,15 @@ class DatabaseEngine:
     def get_attendance_by_index(self, title_prefix, creator, offset, limit):
         session = self.Session()
         res = []
-        for item in session.query(Attendance).join(ManageUser).\
-                filter(Attendance.title.like("{}%".format(title_prefix))).\
-                filter(ManageUser.username.like("{}%".format(creator))).\
-                offset(offset).\
+
+        count = session.query(Attendance).join(ManageUser). \
+            filter(Attendance.title.like("{}%".format(title_prefix))). \
+            filter(ManageUser.username.like("{}%".format(creator))).count()
+
+        for item in session.query(Attendance).join(ManageUser). \
+                filter(Attendance.title.like("{}%".format(title_prefix))). \
+                filter(ManageUser.username.like("{}%".format(creator))). \
+                offset(offset). \
                 limit(limit):
             res.append({
                 "id": item.id,
@@ -82,7 +87,70 @@ class DatabaseEngine:
                 "type": item.type,
                 "info": item.info
             })
-        return res
+        return res, count
+
+    def get_attendance_user_by_index(self, name_prefix, attendance_title, offset, limit):
+        session = self.Session()
+        res = []
+
+        count = session.query(AttendanceUser).join(Attendance). \
+            filter(Attendance.title.like("{}%".format(attendance_title))). \
+            filter(AttendanceUser.name.like("{}%".format(name_prefix))).count()
+
+        for item in session.query(AttendanceUser).join(Attendance). \
+                filter(Attendance.title.like("{}%".format(attendance_title))). \
+                filter(AttendanceUser.name.like("{}%".format(name_prefix))). \
+                offset(offset). \
+                limit(limit):
+            res.append({
+                "id": item.id,
+                "name": item.name,
+                "photo": item.photo.src_path,
+                "attendance_title": item.attendance.title
+            })
+        return res, count
+
+    def update_attendance_user(self, _id, name):
+        session = self.Session()
+        obj = session.query(AttendanceUser).filter_by(id=_id).one()
+        obj.name = name
+        session.commit()
+        return True
+
+    def delete_attendance_user(self, _id):
+        session = self.Session()
+        obj = session.query(AttendanceUser).filter_by(id=_id).one()
+        session.delete(obj)
+        session.commit()
+        return True
+
+    def get_record_by_index(self, name_prefix, attendance_title, offset, limit):
+        session = self.Session()
+        res = []
+
+        count = session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+            filter(Attendance.title.like("{}%".format(attendance_title))). \
+            filter(AttendanceUser.name.like("{}%".format(name_prefix))).count()
+
+        for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+                filter(Attendance.title.like("{}%".format(attendance_title))). \
+                filter(AttendanceUser.name.like("{}%".format(name_prefix))). \
+                offset(offset). \
+                limit(limit):
+            res.append({
+                "id": item.id,
+                "name": item.user.name,
+                "photo": item.photo.src_path,
+                "attendance_title": item.attendance.title
+            })
+        return res, count
+
+    def delete_record(self, _id):
+        session = self.Session()
+        obj = session.query(AttendanceRecord).filter_by(id=_id).one()
+        session.delete(obj)
+        session.commit()
+        return True
 
     def get_attendance_by_title(self, title):
         session = self.Session()
@@ -138,6 +206,26 @@ class DatabaseEngine:
         session.commit()
         session.close()
 
+    def insert_record(self, user_id, attendance_id, photo_src, feature_array):
+
+        photo = Photo()
+        photo.src_path = photo_src
+
+        feature = Feature()
+        feature.photo = photo
+        feature.data = array_to_bin(feature_array)
+
+        item = AttendanceRecord()
+        item.attendance_id = attendance_id
+        item.user_id = user_id
+        item.photo = photo
+        item.feature = feature
+
+        session = self.Session()
+        session.add(item)
+        session.commit()
+        session.close()
+
     @staticmethod
     def get_simple_args():
         args = {
@@ -167,6 +255,9 @@ def fake_data(db_engine):
         print(name, data[:20])
         feature, bbox = face_engine.recognize(data)
         db_engine.insert_attendance_user(name, os.path.join(img_path, x), feature, attendance_id)
+
+        db_engine.insert_record(1, 1, os.path.join(img_path, x), feature)
+
 
 
 def test(db_engine):

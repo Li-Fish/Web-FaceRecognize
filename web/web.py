@@ -67,8 +67,7 @@ def attendance_table():
     limit = json['pageSize']
     title_prefix = json['title_prefix']
 
-    res["list"] = db.get_attendance_by_index(title_prefix, json['creator'], offset, limit)
-    res["total_num"] = db.get_attendance_num()
+    res["list"], res["total_num"] = db.get_attendance_by_index(title_prefix, json['creator'], offset, limit)
 
     return res
 
@@ -91,5 +90,74 @@ def delete_attendance():
     log.info("receive json {}".format(json))
 
     db.delete_attendance(json['id'])
+
+    return 'OK'
+
+
+@app.route('/api/attendance_user_table', methods=['post'])
+@auth.login_required
+def attendance_user_table():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    res = {}
+
+    offset = (json['pageIndex'] - 1) * json['pageSize']
+    limit = json['pageSize']
+    name_prefix = json['name']
+    attendance_title = json["attendance"]
+
+    res["list"], res["total_num"] = db.get_attendance_user_by_index(name_prefix, attendance_title, offset, limit)
+
+    return res
+
+
+@app.route('/api/update_attendance_user', methods=['post'])
+@auth.login_required
+def update_attendance_user():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.update_attendance_user(json['id'], json['name'])
+
+    return 'OK'
+
+
+@app.route('/api/delete_attendance_user', methods=['post'])
+@auth.login_required
+def delete_attendance_user():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.delete_attendance_user(json['id'])
+
+    return 'OK'
+
+
+@app.route('/api/record_table', methods=['post'])
+@auth.login_required
+def record_table():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    res = {}
+
+    offset = (json['pageIndex'] - 1) * json['pageSize']
+    limit = json['pageSize']
+    name_prefix = json['name']
+    attendance_title = json["attendance"]
+
+    res["list"], res["total_num"] = db.get_record_by_index(name_prefix, attendance_title, offset, limit)
+
+    return res
+
+
+@app.route('/api/delete_record', methods=['post'])
+@auth.login_required
+def delete_record():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.delete_record(json['id'])
 
     return 'OK'
