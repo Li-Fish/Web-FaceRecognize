@@ -1,5 +1,5 @@
-import argparse
-import threading
+import os
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from util.common_tools import executor_callback
@@ -13,6 +13,7 @@ from util.fish_socket import ServerSocket, ClientSocket
 class FaceServer:
     def __init__(self, ip, port, db_engine, face_model_args=None, threads_num=20):
         self.face_engine = FaceEngine(face_model_args)
+        self.db_engine = db_engine
         self.retrieve_engine = RetrieveEngine(db_engine=db_engine)
         self.net_server = ServerSocket(ip, port)
         self.pool = ThreadPoolExecutor(threads_num)
@@ -35,6 +36,18 @@ class FaceServer:
             feature, bbox = rst
             user = self.retrieve_engine.research_in_group(group_id, feature)
             ans = '{}\n{}'.format(user["id"], user["name"])
+
+            log.info(ans)
+
+            img_path = '../record_image/' + str(int(time.time() * 10 ** 7)) + '.jpg'
+
+            img_path = os.path.abspath(img_path)
+
+            log.info(img_path)
+
+            open(img_path, 'wb').write(img_data)
+            self.db_engine.insert_record(user["id"], group_id, img_path, feature)
+
             socket.raw_send(ans)
 
         socket.close()

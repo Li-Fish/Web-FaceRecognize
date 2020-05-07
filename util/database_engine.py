@@ -34,22 +34,22 @@ class DatabaseEngine:
                 'name': user.name,
                 'feature': bin_to_array(user.feature.data)
             })
+        session.close()
         return rst
 
     def get_user_by_name(self, username):
         session = self.Session()
         for user in session.query(ManageUser).filter_by(username=username):
-            return {
+            rst = {
                 "id": user.id,
                 "username": user.username,
                 "password": user.password,
                 "type": user.type
             }
+            session.close()
+            return rst
+        session.close()
         return None
-
-    def get_attendance_num(self):
-        session = self.Session()
-        return session.query(Attendance).count()
 
     def update_attendance(self, _id, title, info, type):
         session = self.Session()
@@ -58,6 +58,7 @@ class DatabaseEngine:
         obj.info = info
         obj.type = type
         session.commit()
+        session.close()
         return True
 
     def delete_attendance(self, _id):
@@ -65,17 +66,18 @@ class DatabaseEngine:
         obj = session.query(Attendance).filter_by(id=_id).one()
         session.delete(obj)
         session.commit()
+        session.close()
         return True
 
     def get_attendance_by_index(self, title_prefix, creator, offset, limit):
         session = self.Session()
         res = []
 
-        count = session.query(Attendance).join(ManageUser). \
+        count = session.query(Attendance).join(ManageUser, Attendance.creator_id == ManageUser.id). \
             filter(Attendance.title.like("{}%".format(title_prefix))). \
             filter(ManageUser.username.like("{}%".format(creator))).count()
 
-        for item in session.query(Attendance).join(ManageUser). \
+        for item in session.query(Attendance).join(ManageUser, Attendance.creator_id == ManageUser.id). \
                 filter(Attendance.title.like("{}%".format(title_prefix))). \
                 filter(ManageUser.username.like("{}%".format(creator))). \
                 offset(offset). \
@@ -87,17 +89,18 @@ class DatabaseEngine:
                 "type": item.type,
                 "info": item.info
             })
+        session.close()
         return res, count
 
     def get_attendance_user_by_index(self, name_prefix, attendance_title, offset, limit):
         session = self.Session()
         res = []
 
-        count = session.query(AttendanceUser).join(Attendance). \
+        count = session.query(AttendanceUser).join(Attendance, AttendanceUser.attendance_id == Attendance.id). \
             filter(Attendance.title.like("{}%".format(attendance_title))). \
             filter(AttendanceUser.name.like("{}%".format(name_prefix))).count()
 
-        for item in session.query(AttendanceUser).join(Attendance). \
+        for item in session.query(AttendanceUser).join(Attendance, AttendanceUser.attendance_id == Attendance.id). \
                 filter(Attendance.title.like("{}%".format(attendance_title))). \
                 filter(AttendanceUser.name.like("{}%".format(name_prefix))). \
                 offset(offset). \
@@ -108,6 +111,7 @@ class DatabaseEngine:
                 "photo": item.photo.src_path,
                 "attendance_title": item.attendance.title
             })
+        session.close()
         return res, count
 
     def update_attendance_user(self, _id, name):
@@ -115,6 +119,7 @@ class DatabaseEngine:
         obj = session.query(AttendanceUser).filter_by(id=_id).one()
         obj.name = name
         session.commit()
+        session.close()
         return True
 
     def delete_attendance_user(self, _id):
@@ -122,17 +127,20 @@ class DatabaseEngine:
         obj = session.query(AttendanceUser).filter_by(id=_id).one()
         session.delete(obj)
         session.commit()
+        session.close()
         return True
 
     def get_record_by_index(self, name_prefix, attendance_title, offset, limit):
         session = self.Session()
         res = []
 
-        count = session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+        count = session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id).\
+            join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
             filter(Attendance.title.like("{}%".format(attendance_title))). \
             filter(AttendanceUser.name.like("{}%".format(name_prefix))).count()
 
-        for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+        for item in session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id).\
+                join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
                 filter(Attendance.title.like("{}%".format(attendance_title))). \
                 filter(AttendanceUser.name.like("{}%".format(name_prefix))). \
                 offset(offset). \
@@ -143,6 +151,10 @@ class DatabaseEngine:
                 "photo": item.photo.src_path,
                 "attendance_title": item.attendance.title
             })
+        session.close()
+
+        log.info('{} {}'.format(count, len(res)))
+
         return res, count
 
     def delete_record(self, _id):
@@ -150,18 +162,22 @@ class DatabaseEngine:
         obj = session.query(AttendanceRecord).filter_by(id=_id).one()
         session.delete(obj)
         session.commit()
+        session.close()
         return True
 
     def get_attendance_by_title(self, title):
         session = self.Session()
         for item in session.query(Attendance).filter_by(title=title):
-            return {
+            rst = {
                 "id": item.id,
                 "creator": item.creator_user.username,
                 "title": item.title,
                 "type": item.type,
                 "info": item.info
             }
+            session.close()
+            return rst
+        session.close()
         return None
 
     def insert_attendance(self, title, create_id=None, info=None, _type=1):
@@ -259,10 +275,23 @@ def fake_data(db_engine):
         db_engine.insert_record(1, 1, os.path.join(img_path, x), feature)
 
 
-
 def test(db_engine):
     print(db_engine.get_retrieve_user(1))
 
 
 if __name__ == '__main__':
-    fake_data(DatabaseEngine())
+    # fake_data(DatabaseEngine())
+    t = DatabaseEngine()
+    session = t.Session()
+    for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+            filter(Attendance.title.like("{}%".format(""))). \
+            filter(AttendanceUser.name.like("{}%".format(""))):
+        print(item)
+
+    d = session.query(AttendanceRecord). \
+        join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
+        join(AttendanceUser, AttendanceUser.id == AttendanceRecord.user_id). \
+        filter(Attendance.title.like("{}%".format(""))). \
+        filter(AttendanceUser.name.like("{}%".format(""))).count()
+
+    print(d)

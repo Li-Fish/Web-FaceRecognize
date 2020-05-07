@@ -1,5 +1,4 @@
 from flask import Flask, render_template, make_response, request
-
 from util.account_util import generate_auth_token, decode_auth_token
 from util.database_engine import DatabaseEngine
 from flask_cors import CORS
