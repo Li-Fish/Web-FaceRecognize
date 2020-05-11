@@ -2,7 +2,7 @@ import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from util.common_tools import executor_callback
+from util.common_tools import executor_callback, array_to_bin
 from util.database_engine import DatabaseEngine
 from util.fish_logger import log
 from face.face_engine import FaceEngine
@@ -24,7 +24,23 @@ class FaceServer:
 
         while True:
             socket = self.net_server.accept()
-            self.pool.submit(self.process_retrieve, socket).add_done_callback(executor_callback)
+            self.pool.submit(self.handle_request, socket).add_done_callback(executor_callback)
+
+    def handle_request(self, socket):
+        _type = socket.recv()
+        if _type == b'0':
+            self.process_retrieve(socket)
+        elif _type == b'1':
+            self.process_fe(socket)
+        else:
+            raise Exception('unknown request type {}'.format(_type))
+
+    def process_fe(self, socket):
+        img_data = socket.recv()
+        rst = self.face_engine.recognize(img_data, True)
+        if rst is not None:
+            socket.send(array_to_bin(rst[0]))
+        socket.close()
 
     def process_retrieve(self, socket):
         group_id = int.from_bytes(socket.recv(), byteorder='big', signed=False)
@@ -51,12 +67,6 @@ class FaceServer:
             socket.raw_send(ans)
 
         socket.close()
-
-    def fe(self, data, rotate):
-        rst = self.face_engine.recognize(data, True)
-        if rst is None:
-            return None
-        return rst[0]
 
     def stop(self):
         # TODO

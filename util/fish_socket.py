@@ -1,4 +1,5 @@
 import socket
+import struct
 import threading
 from util.fish_logger import log
 from queue import Queue
@@ -35,6 +36,12 @@ class ClientSocket():
     def __init__(self, raw_socket):
         self.socket = raw_socket
 
+    @staticmethod
+    def connect_socket(ip, port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((ip, port))
+        return ClientSocket(s)
+
     def recv(self):
         data = []
 
@@ -57,6 +64,13 @@ class ClientSocket():
             raise RuntimeError("接受长度不符合预期")
 
         return b''.join(data)
+
+    def send(self, data):
+        if type(data) is str:
+            data = bytes(data, encoding="utf8")
+        len_data = struct.pack("!i", len(data))
+        self.socket.send(len_data)
+        self.socket.send(data)
 
     def raw_recv(self, buf_size=2048):
         return self.socket.recv(buf_size)

@@ -41,3 +41,9 @@ def bin_to_array(data):
     out = io.BytesIO(data)
     out.seek(0)
     return np.load(out)
+
+
+if __name__ == '__main__':
+    z = np.zeros((2, 2), dtype=[('x', 'i4'), ('y', 'i4')])
+    z = array_to_bin(z)
+    print(z)

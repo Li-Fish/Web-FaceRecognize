@@ -1,11 +1,17 @@
-from flask import Flask, render_template, make_response, request
+import os
+import json as js
+from flask import Flask, render_template, make_response, request, g
 from util.account_util import generate_auth_token, decode_auth_token
+from util.common_tools import bin_to_array, array_to_bin
 from util.database_engine import DatabaseEngine
 from flask_cors import CORS
 from flask_httpauth import HTTPBasicAuth
+from util.fish_socket import ClientSocket
 
 from util.fish_logger import log
 
+upload_path = '/home/fish/PycharmProjects/Web&FaceRecognize/upload_image/'
+face_server_address = ('192.168.123.136', 11234)
 secret_key = "magic"
 auth = HTTPBasicAuth()
 db = DatabaseEngine()
@@ -31,6 +37,7 @@ def verify_password(fir, sec):
         return False
     else:
         username = decode_auth_token(username_token, secret_key)
+        g.username = username
         return db.get_user_by_name(username) is not None
 
 
@@ -69,6 +76,19 @@ def attendance_table():
     res["list"], res["total_num"] = db.get_attendance_by_index(title_prefix, json['creator'], offset, limit)
 
     return res
+
+
+@app.route('/api/add_attendance', methods=['post'])
+@auth.login_required
+def add_attendance():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    user_id = db.get_user_by_name(g.username)['id']
+
+    db.insert_attendance(json['title'], user_id, json['info'], json['type'])
+
+    return 'OK'
 
 
 @app.route('/api/update_attendance', methods=['post'])
@@ -118,6 +138,42 @@ def update_attendance_user():
     log.info("receive json {}".format(json))
 
     db.update_attendance_user(json['id'], json['name'])
+
+    return 'OK'
+
+
+@app.route('/api/add_attendance_user', methods=['post'])
+@auth.login_required
+def add_attendance_user():
+    json = js.loads(request.form.get('json'))
+    log.info("receive json {}".format(json))
+
+    img_data = request.files['file'].read()
+    print(img_data[:10])
+
+    socket = ClientSocket.connect_socket(face_server_address[0], face_server_address[1])
+
+    # request type
+    socket.send(b'1')
+    socket.send(img_data)
+
+    feature = socket.raw_recv()
+
+    if len(feature) == 0:
+        app.logger.info('FE fail')
+        return 'FE Fail', 500
+
+    if not os.path.exists(upload_path + str(json['attendance_id'])):
+        os.mkdir(upload_path + str(json['attendance_id']))
+
+    img_path = upload_path + str(json['attendance_id']) + '/' + json['name'] + '.jpg'
+    log.info('save img, path: {}'.format(img_path))
+
+    with open(img_path, 'wb') as f:
+        f.write(img_data)
+
+    feature = array_to_bin(feature)
+    db.insert_attendance_user(json["name"], img_path, feature, json['attendance_id'])
 
     return 'OK'
 
