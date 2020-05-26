@@ -47,6 +47,7 @@ class AttendanceRecord(Base):
     feature_id = Column(Integer, ForeignKey("feature.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("attendance_user.id"), nullable=False)
     attendance_id = Column(Integer, ForeignKey("attendance.id"), nullable=False)
+    date = Column(Integer, nullable=False)
 
     photo = relationship("Photo")
     feature = relationship("Feature")
@@ -64,8 +65,6 @@ class AttendanceDate(Base):
     start_time = Column(Integer, nullable=False)
     end_time = Column(Integer, nullable=False)
     attendance_id = Column(Integer, ForeignKey('attendance.id'), nullable=False)
-
-    attendance = relationship("Attendance", backref="date_list")
 
     def __repr__(self):
         return "<AttendanceDate(id='%s', attendance_id='%s')>" \
@@ -108,6 +107,7 @@ class Attendance(Base):
 
     creator_user = relationship("ManageUser", backref="attendance_list")
 
+    date_list = relationship("AttendanceDate", backref="attendance", cascade="all, delete, delete-orphan")
     user_list = relationship("AttendanceUser", backref="attendance", cascade="all, delete, delete-orphan")
 
     def __repr__(self):

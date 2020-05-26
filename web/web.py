@@ -216,3 +216,23 @@ def delete_record():
     db.delete_record(json['id'])
 
     return 'OK'
+
+
+@app.route('/api/upload_attendance_date', methods=['post'])
+@auth.login_required
+def upload_attendance_date():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.upload_attendance_date(json['date_list'], json['attendance_id'])
+
+    return 'OK'
+
+
+@app.route('/api/get_attendance_date', methods=['post'])
+@auth.login_required
+def get_attendance_date():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+    res = {'date_list': db.get_attendance_date(json['attendance_id'])}
+    return res

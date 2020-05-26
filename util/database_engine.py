@@ -1,10 +1,12 @@
 import os
+import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from face.face_engine import FaceEngine
-from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature, AttendanceRecord
+from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature, AttendanceRecord, \
+    AttendanceDate
 from util.common_tools import bin_to_array, array_to_bin
 from util.fish_logger import log
 
@@ -134,12 +136,12 @@ class DatabaseEngine:
         session = self.Session()
         res = []
 
-        count = session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id).\
+        count = session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
             join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
             filter(Attendance.title.like("{}%".format(attendance_title))). \
             filter(AttendanceUser.name.like("{}%".format(name_prefix))).count()
 
-        for item in session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id).\
+        for item in session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
                 join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
                 filter(Attendance.title.like("{}%".format(attendance_title))). \
                 filter(AttendanceUser.name.like("{}%".format(name_prefix))). \
@@ -149,7 +151,8 @@ class DatabaseEngine:
                 "id": item.id,
                 "name": item.user.name,
                 "photo": item.photo.src_path,
-                "attendance_title": item.attendance.title
+                "attendance_title": item.attendance.title,
+                "date": item.date
             })
         session.close()
 
@@ -236,11 +239,39 @@ class DatabaseEngine:
         item.user_id = user_id
         item.photo = photo
         item.feature = feature
+        item.date = int(time.time())
 
         session = self.Session()
         session.add(item)
         session.commit()
         session.close()
+
+    def upload_attendance_date(self, date_list, attendance_id):
+        session = self.Session()
+
+        for date in session.query(Attendance).filter_by(id=attendance_id).one().date_list:
+            session.delete(date)
+
+        for date in date_list:
+            item = AttendanceDate()
+            item.attendance_id = attendance_id
+            item.start_time = date[0]
+            item.end_time = date[1]
+            session.add(item)
+
+        session.commit()
+        session.close()
+
+    def get_attendance_date(self, attendance_id):
+        session = self.Session()
+
+        rst = []
+
+        for date in session.query(Attendance).filter_by(id=attendance_id).one().date_list:
+            session.delete(date)
+            rst.append([date.start_time, date.end_time])
+
+        return rst
 
     @staticmethod
     def get_simple_args():
@@ -280,18 +311,18 @@ def test(db_engine):
 
 
 if __name__ == '__main__':
-    # fake_data(DatabaseEngine())
-    t = DatabaseEngine()
-    session = t.Session()
-    for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
-            filter(Attendance.title.like("{}%".format(""))). \
-            filter(AttendanceUser.name.like("{}%".format(""))):
-        print(item)
-
-    d = session.query(AttendanceRecord). \
-        join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
-        join(AttendanceUser, AttendanceUser.id == AttendanceRecord.user_id). \
-        filter(Attendance.title.like("{}%".format(""))). \
-        filter(AttendanceUser.name.like("{}%".format(""))).count()
-
-    print(d)
+    fake_data(DatabaseEngine())
+    # t = DatabaseEngine()
+    # session = t.Session()
+    # for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \
+    #         filter(Attendance.title.like("{}%".format(""))). \
+    #         filter(AttendanceUser.name.like("{}%".format(""))):
+    #     print(item)
+    #
+    # d = session.query(AttendanceRecord). \
+    #     join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
+    #     join(AttendanceUser, AttendanceUser.id == AttendanceRecord.user_id). \
+    #     filter(Attendance.title.like("{}%".format(""))). \
+    #     filter(AttendanceUser.name.like("{}%".format(""))).count()
+    #
+    # print(d)
