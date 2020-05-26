@@ -1,3 +1,5 @@
+from random import choice
+
 import numpy as np
 import io
 import cv2
@@ -43,7 +45,19 @@ def bin_to_array(data):
     return np.load(out)
 
 
+def generator_random_code(lenght, char_table=None):
+    seed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if char_table is not None:
+        seed = char_table
+    sa = []
+    for i in range(lenght):
+        sa.append(choice(seed))
+    salt = ''.join(sa)
+    return salt
+
+
 if __name__ == '__main__':
-    z = np.zeros((2, 2), dtype=[('x', 'i4'), ('y', 'i4')])
-    z = array_to_bin(z)
-    print(z)
+    # z = np.zeros((2, 2), dtype=[('x', 'i4'), ('y', 'i4')])
+    # z = array_to_bin(z)
+    # print(z)
+    print(generator_random_code(10))

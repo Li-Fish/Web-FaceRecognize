@@ -236,3 +236,12 @@ def get_attendance_date():
     log.info("receive json {}".format(json))
     res = {'date_list': db.get_attendance_date(json['attendance_id'])}
     return res
+
+
+@app.route('/api/change_attendance_code', methods=['post'])
+@auth.login_required
+def change_attendance_code():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+    db.update_attendance_code(json['id'])
+    return 'OK'

@@ -44,13 +44,25 @@ class FaceServer:
 
     def process_retrieve(self, socket):
         group_id = int.from_bytes(socket.recv(), byteorder='big', signed=False)
-        log.info("group id is {}".format(group_id))
+        group_code = socket.recv()
+        log.info("group id is {}:{}".format(group_id, group_code))
         img_data = socket.recv()
+
+        if not self.db_engine.check_attendance(group_id, group_code):
+            log.info('error id code not match id:{} code:{}'.format(group_id, group_code.decode('utf-8')))
+            socket.close()
+            return
 
         rst = self.face_engine.recognize(img_data, True)
         if rst is not None:
             feature, bbox = rst
             user = self.retrieve_engine.research_in_group(group_id, feature)
+
+            if user is None:
+                log.info("retrieve error")
+                socket.close()
+                return
+
             ans = '{}\n{}'.format(user["id"], user["name"])
 
             log.info(ans)

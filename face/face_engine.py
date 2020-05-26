@@ -5,6 +5,7 @@ from util.common_tools import rotate_img, executor_callback
 import numpy as np
 import cv2
 from face.base import face_model
+from util.fish_logger import log
 
 
 class FaceEngine:
@@ -18,6 +19,12 @@ class FaceEngine:
     def do_recognize(self, data, rotate=False):
         rimg = np.asarray(bytearray(data), dtype="uint8")
         rimg = cv2.imdecode(rimg, cv2.IMREAD_COLOR)
+
+        sp = rimg.shape
+
+        if sp[2] != 3 or sp[0] > 1080 or sp[1] > 1920 or sp[0] <= 0 or sp[1] <= 0:
+            log.info('img format error {}'.format(sp))
+            return None
 
         if rotate:
             rimg = rotate_img(rimg)

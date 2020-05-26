@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from face.face_engine import FaceEngine
 from util.database_model import Base, AttendanceUser, Attendance, ManageUser, Photo, Feature, AttendanceRecord, \
     AttendanceDate
-from util.common_tools import bin_to_array, array_to_bin
+from util.common_tools import bin_to_array, array_to_bin, generator_random_code
 from util.fish_logger import log
 
 
@@ -53,12 +53,20 @@ class DatabaseEngine:
         session.close()
         return None
 
-    def update_attendance(self, _id, title, info, type):
+    def update_attendance(self, _id, title, info, _type):
         session = self.Session()
         obj = session.query(Attendance).filter_by(id=_id).one()
         obj.title = title
         obj.info = info
-        obj.type = type
+        obj.type = _type
+        session.commit()
+        session.close()
+        return True
+
+    def update_attendance_code(self, _id):
+        session = self.Session()
+        obj = session.query(Attendance).filter_by(id=_id).one()
+        obj.code = generator_random_code(16)
         session.commit()
         session.close()
         return True
@@ -89,10 +97,21 @@ class DatabaseEngine:
                 "creator": item.creator_user.username,
                 "title": item.title,
                 "type": item.type,
-                "info": item.info
+                "info": item.info,
+                "code": item.code
             })
         session.close()
         return res, count
+
+    def check_attendance(self, attendance_id, code):
+        session = self.Session()
+
+        ok = False
+        if session.query(Attendance).filter_by(id=attendance_id, code=code).count() == 1:
+            ok = True
+
+        session.close()
+        return ok
 
     def get_attendance_user_by_index(self, name_prefix, attendance_title, offset, limit):
         session = self.Session()
@@ -189,6 +208,7 @@ class DatabaseEngine:
         item.creator_id = create_id
         item.info = info
         item.type = _type
+        item.code = generator_random_code(16)
 
         session = self.Session()
         session.add(item)
