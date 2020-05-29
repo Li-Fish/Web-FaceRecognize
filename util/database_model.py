@@ -47,8 +47,10 @@ class AttendanceRecord(Base):
     feature_id = Column(Integer, ForeignKey("feature.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("attendance_user.id"), nullable=False)
     attendance_id = Column(Integer, ForeignKey("attendance.id"), nullable=False)
+    attendance_date_id = Column(Integer, ForeignKey('attendance_date.id', ondelete='SET NULL'))
     date = Column(Integer, nullable=False)
 
+    attendance_date = relationship('AttendanceDate')
     photo = relationship("Photo")
     feature = relationship("Feature")
     attendance = relationship("Attendance", backref="record_list")

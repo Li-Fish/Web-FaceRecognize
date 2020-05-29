@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 
@@ -245,7 +246,47 @@ class DatabaseEngine:
         session.commit()
         session.close()
 
-    def insert_record(self, user_id, attendance_id, photo_src, feature_array):
+    def check_record(self, attendance_id, user_id):
+        session = self.Session()
+
+        now = datetime.datetime.now()
+        tnow = now.hour * 60 * 60 + now.minute * 60 + now.second
+
+        user = session.query(AttendanceUser).filter_by(id=user_id).one()
+
+        if len(user.record_list) > 0:
+            last_date = None
+            last_time = None
+            for item in user.record_list:
+                if item.attendance_date is None:
+                    continue
+                if last_time is None or last_time < item.date:
+                    last_date = item.attendance_date
+                    last_time = item.date
+
+            if last_date is not None:
+                last = datetime.datetime.fromtimestamp(last_time)
+                bound = datetime.datetime(last.year, last.month, last.day,
+                                          last_date.end_time // 3600,
+                                          last_date.end_time // 60 % 60,
+                                          last_date.end_time % 60)
+
+                if int(bound.timestamp()) >= int(now.timestamp()):
+                    log.info('bound: {}, now: {}'.format(bound, now))
+                    session.close()
+                    return None
+
+        attendance = session.query(Attendance).filter_by(id=attendance_id).one()
+
+        for date in attendance.date_list:
+            log.info(" {} {} {} ".format(date.start_time, date.end_time, tnow))
+            if date.start_time <= tnow <= date.end_time:
+                session.close()
+                return date.id
+
+        session.close()
+
+    def insert_record(self, user_id, attendance_id, photo_src, feature_array, attendance_date_id):
 
         photo = Photo()
         photo.src_path = photo_src
@@ -260,6 +301,7 @@ class DatabaseEngine:
         item.photo = photo
         item.feature = feature
         item.date = int(time.time())
+        item.attendance_date_id = attendance_date_id
 
         session = self.Session()
         session.add(item)
@@ -314,16 +356,17 @@ def fake_data(db_engine):
     for x in range(2, 100):
         db_engine.insert_attendance("test" + str(x), create_id, "test")
     attendance_id = db_engine.get_attendance_by_title("test1")["id"]
+    db_engine.upload_attendance_date([[0, 23 * 3600 + 59 * 60 + 59]], 1)
 
     img_path = "/home/fish/PycharmProjects/Web&FaceRecognize/upload_image"
     for x in os.listdir(img_path):
         name = x.split('.')[0]
         data = open(os.path.join(img_path, x), 'rb').read()
         print(name, data[:20])
+
         feature, bbox = face_engine.recognize(data)
         db_engine.insert_attendance_user(name, os.path.join(img_path, x), feature, attendance_id)
-
-        db_engine.insert_record(1, 1, os.path.join(img_path, x), feature)
+        db_engine.insert_record(1, 1, os.path.join(img_path, x), feature, 1)
 
 
 def test(db_engine):
@@ -332,6 +375,8 @@ def test(db_engine):
 
 if __name__ == '__main__':
     fake_data(DatabaseEngine())
+    # t = DatabaseEngine()
+    # t.init_db()
     # t = DatabaseEngine()
     # session = t.Session()
     # for item in session.query(AttendanceRecord).join(Attendance).join(AttendanceUser). \

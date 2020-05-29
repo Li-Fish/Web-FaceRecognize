@@ -11,7 +11,7 @@ from util.fish_socket import ServerSocket, ClientSocket
 
 
 class FaceServer:
-    def __init__(self, ip, port, db_engine, face_model_args=None, threads_num=20):
+    def __init__(self, ip, port, db_engine, face_model_args=None, threads_num=1):
         self.face_engine = FaceEngine(face_model_args)
         self.db_engine = db_engine
         self.retrieve_engine = RetrieveEngine(db_engine=db_engine)
@@ -54,12 +54,19 @@ class FaceServer:
             return
 
         rst = self.face_engine.recognize(img_data, True)
+
         if rst is not None:
             feature, bbox = rst
             user = self.retrieve_engine.research_in_group(group_id, feature)
 
             if user is None:
                 log.info("retrieve error")
+                socket.close()
+                return
+
+            date_id = self.db_engine.check_record(group_id, user['id'])
+            if date_id is None:
+                log.info('not match attendance date')
                 socket.close()
                 return
 
@@ -74,7 +81,7 @@ class FaceServer:
             log.info(img_path)
 
             open(img_path, 'wb').write(img_data)
-            self.db_engine.insert_record(user["id"], group_id, img_path, feature)
+            self.db_engine.insert_record(user["id"], group_id, img_path, feature, date_id)
 
             socket.raw_send(ans)
 

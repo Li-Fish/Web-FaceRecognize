@@ -48,8 +48,6 @@ class ClientSocket():
         lenData = self.socket.recv(4)
         len_data = int.from_bytes(lenData, byteorder='big', signed=False)
 
-        log.info("receive data len {}".format(len_data))
-
         lenSum = 0
         while True:
             chunk = self.socket.recv(min(len_data - lenSum, 2048))

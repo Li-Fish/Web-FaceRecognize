@@ -21,8 +21,7 @@ class FaceEngine:
         rimg = cv2.imdecode(rimg, cv2.IMREAD_COLOR)
 
         sp = rimg.shape
-
-        if sp[2] != 3 or sp[0] > 1080 or sp[1] > 1920 or sp[0] <= 0 or sp[1] <= 0:
+        if sp[2] != 3 or sp[0] > 1920 or sp[1] > 1920 or sp[0] <= 0 or sp[1] <= 0:
             log.info('img format error {}'.format(sp))
             return None
 

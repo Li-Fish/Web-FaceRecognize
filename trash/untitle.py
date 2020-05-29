@@ -1,4 +1,12 @@
-import os
-print(os.path.exists('123/123/123'))
-if not os.path.exists('123/123/123'):
-    os.mkdir('123/123/123')
+
+for x in range(10):
+    print(x)
+    c = 2
+
+print(x)
+print(c)
+
+if 1 == 1:
+    y = 2
+
+print(y)
