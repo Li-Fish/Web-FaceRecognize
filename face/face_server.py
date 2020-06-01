@@ -32,6 +32,8 @@ class FaceServer:
             self.process_retrieve(socket)
         elif _type == b'1':
             self.process_fe(socket)
+        elif _type == b'2':
+            self.process_test(socket)
         else:
             raise Exception('unknown request type {}'.format(_type))
 
@@ -40,6 +42,17 @@ class FaceServer:
         rst = self.face_engine.recognize(img_data, True)
         if rst is not None:
             socket.send(array_to_bin(rst[0]))
+        socket.close()
+
+    def process_test(self, socket):
+        group_id = int.from_bytes(socket.recv(), byteorder='big', signed=False)
+        group_code = socket.recv()
+        log.info("group id is {}:{}".format(group_id, group_code))
+        if not self.db_engine.check_attendance(group_id, group_code):
+            log.info('error id code not match id:{} code:{}'.format(group_id, group_code.decode('utf-8')))
+            socket.close()
+            return
+        socket.raw_send('OK')
         socket.close()
 
     def process_retrieve(self, socket):
