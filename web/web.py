@@ -245,3 +245,15 @@ def change_attendance_code():
     log.info("receive json {}".format(json))
     db.update_attendance_code(json['id'])
     return 'OK'
+
+
+@app.route('/api/get_dashboard_data', methods=['post'])
+@auth.login_required
+def get_dashboard_data():
+    rst = {}
+    rst['attendance_list'] = db.get_recent_record()
+    rst['today_attendance_num'] = db.get_today_attendance_num()
+    rst['last_7days_attendance_num'] = db.get_last_7days_attendance_num()
+    return rst
+
+

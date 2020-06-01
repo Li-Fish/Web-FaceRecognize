@@ -2,7 +2,7 @@ import datetime
 import os
 import time
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
 from face.face_engine import FaceEngine
@@ -179,6 +179,71 @@ class DatabaseEngine:
         log.info('{} {}'.format(count, len(res)))
 
         return res, count
+
+    def get_today_attendance_num(self):
+        session = self.Session()
+
+        rst = [0] * 24
+
+        now = datetime.datetime.now()
+
+        for hour in range(24):
+            st_time = datetime.datetime(now.year, now.month, now.day, hour).timestamp()
+            en_time = datetime.datetime(now.year, now.month, now.day, hour, 59, 59).timestamp()
+
+            rst[hour] = session.query(AttendanceRecord). \
+                join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
+                join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
+                filter(st_time <= AttendanceRecord.date). \
+                filter(AttendanceRecord.date <= en_time). \
+                order_by(desc(AttendanceRecord.date)).count()
+
+        return rst
+
+    def get_last_7days_attendance_num(self):
+        session = self.Session()
+
+        rst = []
+
+        now = datetime.datetime.now()
+
+        for days in list(range(7))[::-1]:
+            day_delta = datetime.timedelta(days=1)
+
+            st_time = (datetime.datetime(now.year, now.month, now.day) - day_delta * days).timestamp()
+            en_time = (datetime.datetime(now.year, now.month, now.day, 23, 59, 59) - day_delta * days).timestamp()
+
+            num = session.query(AttendanceRecord). \
+                join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
+                join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
+                filter(st_time <= AttendanceRecord.date). \
+                filter(AttendanceRecord.date <= en_time). \
+                order_by(desc(AttendanceRecord.date)).count()
+
+            rst.append(num)
+
+        print(rst)
+
+        return rst
+
+    def get_recent_record(self, limit=8):
+        session = self.Session()
+        res = []
+
+        for item in session.query(AttendanceRecord).join(Attendance, AttendanceRecord.attendance_id == Attendance.id). \
+                join(AttendanceUser, AttendanceRecord.user_id == AttendanceUser.id). \
+                order_by(desc(AttendanceRecord.date)). \
+                limit(limit):
+            res.append({
+                "id": item.id,
+                "name": item.user.name,
+                "photo": item.photo.src_path,
+                "attendance_title": item.attendance.title,
+                "date": item.date
+            })
+        session.close()
+
+        return res
 
     def delete_record(self, _id):
         session = self.Session()
