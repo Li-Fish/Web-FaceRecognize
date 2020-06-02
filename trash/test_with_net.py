@@ -176,7 +176,7 @@ def start_net():
 
 
 def test():
-    with open('../upload_image/Fish.jpg', 'rb') as f:
+    with open('../images/upload_image/Fish.jpg', 'rb') as f:
         data = f.read()
     f, bbox = do_recognize(data)
     # print(f)

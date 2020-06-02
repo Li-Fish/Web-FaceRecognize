@@ -124,7 +124,7 @@ def fake_data(session):
     attendance_date = AttendanceDate(start_time=0, end_time=60)
     attendance_user = AttendanceUser(name="cat")
     attendance_record = AttendanceRecord()
-    photo = Photo(src_path="/home/fish/PycharmProjects/Web&FaceRecognize/upload_image/Obama.jpg")
+    photo = Photo(src_path="/images/upload_image/Obama.jpg")
     feature = Feature(data=array_to_bin(np.arange(512)))
 
     attendance.creator_user = manager

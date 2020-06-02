@@ -1,3 +1,4 @@
+import base64
 import os
 import json as js
 from flask import Flask, render_template, make_response, request, g
@@ -10,7 +11,9 @@ from util.fish_socket import ClientSocket
 
 from util.fish_logger import log
 
-upload_path = '/home/fish/PycharmProjects/Web&FaceRecognize/upload_image/'
+base_img_path = '/home/fish/PycharmProjects/Web&FaceRecognize/images/'
+upload_path = base_img_path + '/upload_image/'
+
 face_server_address = ('192.168.123.136', 11234)
 secret_key = "magic"
 auth = HTTPBasicAuth()
@@ -163,10 +166,7 @@ def add_attendance_user():
         app.logger.info('FE fail')
         return 'FE Fail', 500
 
-    if not os.path.exists(upload_path + str(json['attendance_id'])):
-        os.mkdir(upload_path + str(json['attendance_id']))
-
-    img_path = upload_path + str(json['attendance_id']) + '/' + json['name'] + '.jpg'
+    img_path = upload_path + base64.b64encode(bytes(json['name'], encoding='utf8')).decode() + '.jpg'
     log.info('save img, path: {}'.format(img_path))
 
     with open(img_path, 'wb') as f:
@@ -257,3 +257,13 @@ def get_dashboard_data():
     return rst
 
 
+@app.route('/api/image/<string:image_dir>/<file_name>', methods=['post', 'get'])
+# @auth.login_required
+def get_photo(image_dir, file_name):
+    print(image_dir, file_name)
+
+    image_data = open(base_img_path + image_dir + '/' + file_name, 'rb').read()
+    response = make_response(image_data)
+    response.headers['Content-Type'] = 'image/png'
+
+    return response

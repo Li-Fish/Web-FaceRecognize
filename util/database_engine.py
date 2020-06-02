@@ -17,7 +17,7 @@ class DatabaseEngine:
         if args is None:
             args = self.get_simple_args()
 
-        connect_str = 'mysql+mysqldb://{}:{}@{}:{}/{}' \
+        connect_str = 'mysql+mysqldb://{}:{}@{}:{}/{}?charset=utf8' \
             .format(args['username'], args['password'], args['host'], args['port'], args['db'])
 
         self.engine = create_engine(connect_str, echo=False, pool_size=100)
@@ -423,7 +423,8 @@ def fake_data(db_engine):
     attendance_id = db_engine.get_attendance_by_title("test1")["id"]
     db_engine.upload_attendance_date([[0, 23 * 3600 + 59 * 60 + 59]], 1)
 
-    img_path = "/home/fish/PycharmProjects/Web&FaceRecognize/upload_image"
+    img_path = "../images/upload_image"
+    img_path = os.path.abspath(img_path)
     for x in os.listdir(img_path):
         name = x.split('.')[0]
         data = open(os.path.join(img_path, x), 'rb').read()

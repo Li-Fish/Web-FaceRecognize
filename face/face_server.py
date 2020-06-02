@@ -2,7 +2,9 @@ import os
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from util.common_tools import executor_callback, array_to_bin
+import cv2
+import numpy as np
+from util.common_tools import executor_callback, array_to_bin, rotate_img
 from util.database_engine import DatabaseEngine
 from util.fish_logger import log
 from face.face_engine import FaceEngine
@@ -39,7 +41,7 @@ class FaceServer:
 
     def process_fe(self, socket):
         img_data = socket.recv()
-        rst = self.face_engine.recognize(img_data, True)
+        rst = self.face_engine.recognize(img_data, False)
         if rst is not None:
             socket.send(array_to_bin(rst[0]))
         socket.close()
@@ -87,13 +89,16 @@ class FaceServer:
 
             log.info(ans)
 
-            img_path = '../record_image/' + str(int(time.time() * 10 ** 7)) + '.jpg'
-
+            img_path = '../images/record_image/' + str(int(time.time() * 10 ** 7)) + '.jpg'
             img_path = os.path.abspath(img_path)
+
+            rimg = np.asarray(bytearray(img_data), dtype="uint8")
+            rimg = cv2.imdecode(rimg, cv2.IMREAD_COLOR)
+            rimg = rotate_img(rimg)
+            cv2.imwrite(img_path, rimg)
 
             log.info(img_path)
 
-            open(img_path, 'wb').write(img_data)
             self.db_engine.insert_record(user["id"], group_id, img_path, feature, date_id)
 
             socket.raw_send(ans)

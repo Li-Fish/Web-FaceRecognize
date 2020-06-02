@@ -26,7 +26,10 @@ class FaceEngine:
             return None
 
         if rotate:
-            rimg = rotate_img(rimg)
+            try:
+                rimg = rotate_img(rimg)
+            except Exception as e:
+                print(e)
 
         rst = self.model.get_input(rimg)
         if rst is None:

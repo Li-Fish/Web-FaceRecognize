@@ -29,11 +29,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     model = base.FaceModel(args)
 
-    rimg = cv2.imread('../upload_image/Trump.jpeg')
+    rimg = cv2.imread('../images/upload_image/Trump.jpeg')
     f1 = do_recognize(rimg)
-    rimg = cv2.imread('../upload_image/Fish.jpg')
+    rimg = cv2.imread('../images/upload_image/Fish.jpg')
     f2 = do_recognize(rimg)
-    rimg = cv2.imread('../upload_image/Trump1.jpeg')
+    rimg = cv2.imread('../images/upload_image/Trump1.jpeg')
     f3 = do_recognize(rimg)
 
     dist = np.sum(np.square(f1 - f2))
