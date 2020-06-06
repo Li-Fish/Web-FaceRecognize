@@ -107,6 +107,7 @@ class Attendance(Base):
     type = Column(Integer, nullable=False)
     info = Column(String(500))
     code = Column(String(200), nullable=False, unique=True)
+    week_list = Column(String(200), default="12345")
 
     creator_user = relationship("ManageUser", backref="attendance_list")
 

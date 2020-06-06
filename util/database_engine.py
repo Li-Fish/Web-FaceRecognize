@@ -317,6 +317,13 @@ class DatabaseEngine:
         now = datetime.datetime.now()
         tnow = now.hour * 60 * 60 + now.minute * 60 + now.second
 
+        attendance = session.query(Attendance).filter_by(id=attendance_id).one()
+
+        print('{} asdasd {}'.format(now.weekday() + 1, attendance.week_list))
+
+        if str(now.weekday() + 1) not in attendance.week_list:
+            return None
+
         user = session.query(AttendanceUser).filter_by(id=user_id).one()
 
         if len(user.record_list) > 0:
@@ -340,8 +347,6 @@ class DatabaseEngine:
                     log.info('bound: {}, now: {}'.format(bound, now))
                     session.close()
                     return None
-
-        attendance = session.query(Attendance).filter_by(id=attendance_id).one()
 
         for date in attendance.date_list:
             log.info(" {} {} {} ".format(date.start_time, date.end_time, tnow))
@@ -373,8 +378,17 @@ class DatabaseEngine:
         session.commit()
         session.close()
 
-    def upload_attendance_date(self, date_list, attendance_id):
+    def upload_attendance_date(self, date_list, attendance_id, week_list=None):
+        if week_list is None:
+            week_list = [1, 2, 3, 4, 5]
+
         session = self.Session()
+
+        week_str = ''
+        for x in week_list:
+            week_str += str(x)
+
+        session.query(Attendance).filter_by(id=attendance_id).one().week_list = week_str
 
         for date in session.query(Attendance).filter_by(id=attendance_id).one().date_list:
             session.delete(date)
@@ -392,13 +406,19 @@ class DatabaseEngine:
     def get_attendance_date(self, attendance_id):
         session = self.Session()
 
-        rst = []
+        time_list = []
+        week_list = []
 
-        for date in session.query(Attendance).filter_by(id=attendance_id).one().date_list:
+        attendance = session.query(Attendance).filter_by(id=attendance_id).one()
+
+        for date in attendance.date_list:
             session.delete(date)
-            rst.append([date.start_time, date.end_time])
+            time_list.append([date.start_time, date.end_time])
 
-        return rst
+        for x in attendance.week_list:
+            week_list.append(int(x))
+
+        return time_list, week_list
 
     @staticmethod
     def get_simple_args():

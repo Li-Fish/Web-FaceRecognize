@@ -224,7 +224,7 @@ def upload_attendance_date():
     json = request.get_json()
     log.info("receive json {}".format(json))
 
-    db.upload_attendance_date(json['date_list'], json['attendance_id'])
+    db.upload_attendance_date(json['date_list'], json['attendance_id'], json['week_list'])
 
     return 'OK'
 
@@ -234,7 +234,9 @@ def upload_attendance_date():
 def get_attendance_date():
     json = request.get_json()
     log.info("receive json {}".format(json))
-    res = {'date_list': db.get_attendance_date(json['attendance_id'])}
+    time_list, week_list = db.get_attendance_date(json['attendance_id'])
+    res = {'time_list': time_list,
+           'week_list': week_list}
     return res
 
 
