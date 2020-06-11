@@ -269,3 +269,53 @@ def get_photo(image_dir, file_name):
     response.headers['Content-Type'] = 'image/png'
 
     return response
+
+
+@app.route('/api/manager_user_table', methods=['post'])
+@auth.login_required
+def manager_user_table():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    res = {}
+
+    offset = (json['pageIndex'] - 1) * json['pageSize']
+    limit = json['pageSize']
+    name_prefix = json['username']
+
+    res["list"], res["total_num"] = db.get_manager_user_by_index(name_prefix, offset, limit)
+
+    return res
+
+
+@app.route('/api/delete_manager_user', methods=['post'])
+@auth.login_required
+def delete_manager_user():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.delete_manager_user(json['id'])
+
+    return 'OK'
+
+
+@app.route('/api/update_manager_user', methods=['post'])
+@auth.login_required
+def update_manager_user():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.update_manager_user(json['id'], json['username'], json['password'])
+
+    return 'OK'
+
+
+@app.route('/api/add_manager_user', methods=['post'])
+@auth.login_required
+def add_manager_user():
+    json = request.get_json()
+    log.info("receive json {}".format(json))
+
+    db.insert_manager_user(json['username'], json['password'], 2)
+
+    return 'OK'

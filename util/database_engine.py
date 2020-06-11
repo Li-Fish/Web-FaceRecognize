@@ -431,6 +431,44 @@ class DatabaseEngine:
         }
         return args
 
+    def get_manager_user_by_index(self, name_prefix, offset, limit):
+        session = self.Session()
+        res = []
+
+        count = session.query(ManageUser).\
+            filter(ManageUser.username.like("{}%".format(name_prefix))). \
+            filter(ManageUser.username != 'root').count()
+
+        for item in session.query(ManageUser). \
+                filter(ManageUser.username.like("{}%".format(name_prefix))). \
+                filter(ManageUser.username != 'root').\
+                offset(offset). \
+                limit(limit):
+            res.append({
+                "id": item.id,
+                "username": item.username,
+                "password": item.password
+            })
+        session.close()
+        return res, count
+
+    def update_manager_user(self, _id, username, password):
+        session = self.Session()
+        obj = session.query(ManageUser).filter_by(id=_id).one()
+        obj.username = username
+        obj.password = password
+        session.commit()
+        session.close()
+        return True
+
+    def delete_manager_user(self, _id):
+        session = self.Session()
+        obj = session.query(ManageUser).filter_by(id=_id).one()
+        session.delete(obj)
+        session.commit()
+        session.close()
+        return True
+
 
 def fake_data(db_engine):
     face_engine = FaceEngine()
